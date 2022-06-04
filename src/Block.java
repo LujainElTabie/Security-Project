@@ -1,33 +1,65 @@
+import javax.crypto.IllegalBlockSizeException;
+import javax.crypto.NoSuchPaddingException;
+import javax.crypto.SealedObject;
+import javax.crypto.SecretKey;
+import javax.crypto.spec.IvParameterSpec;
+import java.io.IOException;
+import java.io.Serializable;
+import java.security.InvalidAlgorithmParameterException;
+import java.security.InvalidKeyException;
+import java.security.NoSuchAlgorithmException;
 import java.util.Arrays;
 
-public class Block {
+public class Block implements Serializable {
 
 
-    private String [] transactions;
+
     private int blockHash;
     private int prevBlockHash;
 
+    private HashedRecord [] records;
 
-    public Block(String [] transactions, int prevBlockHash){
+    private SealedObject encryptedRecords;
+
+
+
+
+    public Block( int prevBlockHash){
         super();
-        this.transactions=transactions;
+        this.records =new HashedRecord[3];
         this.prevBlockHash=prevBlockHash;
-        this.blockHash = Arrays.hashCode(new int []{ Arrays.hashCode(transactions), this.prevBlockHash});
+        this.blockHash = Arrays.hashCode(new int []{ Arrays.hashCode(records), this.prevBlockHash});
     }
 
+    public boolean addRecord(SecretKey key, IvParameterSpec ivParameterSpec, HashedRecord record) throws InvalidAlgorithmParameterException, NoSuchPaddingException, IllegalBlockSizeException, NoSuchAlgorithmException, IOException, InvalidKeyException {
+        if(this.records[0]==null){
+            records[0]=record;
+            return true;
+        }
+        else if(this.records[1]==null){
+            records[1]=record;
+            return true;
+        }
+        else if(this.records[2]==null){
+            records[2]=record;
+            return true;
+        }
+        HashedRecord [] rec= this.records;
+        String algorithm = "AES/CBC/PKCS5Padding";
+        SealedObject sealedObject = Doctor.encryptObject(
+                algorithm, rec, key, ivParameterSpec);
+        this.encryptedRecords=sealedObject;
+        return false;
+    }
     /**
      * @return String [] return the transactions
      */
-    public String [] getTransactions() {
-        return transactions;
-    }
+
 
     /**
      * @param transactions the transactions to set
      */
-    public void setTransactions(String [] transactions) {
-        this.transactions = transactions;
-    }
+
 
     /**
      * @return int return the blockHash
@@ -60,7 +92,7 @@ public class Block {
     @Override
     public String toString() {
         return "Block{" +
-                "transactions=" + Arrays.toString(transactions) +
+                "record=" + encryptedRecords +
                 ", blockHash=" + blockHash +
                 ", prevBlockHash=" + prevBlockHash +
                 '}';
