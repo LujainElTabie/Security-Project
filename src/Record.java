@@ -13,8 +13,11 @@ public class Record  implements Serializable {
 
     private String readings ;
     private String reason ;
+    private String testName;
 
-    private ArrayList<String> tests;
+    private String testResult;
+
+    private String testReason;
 
 
     private Record prevRecord;
@@ -23,9 +26,10 @@ public class Record  implements Serializable {
         this.prevRecord = prevRecord;
     }
 
-    public Record(ArrayList<String> tests) {
-        this.tests = tests;
-        this.prevRecord=prevRecord;
+    public Record(String testName, String testResult, String testReason) {
+        this.testName = testName;
+        this.testResult=testResult;
+        this.testReason=testReason;
     }
 
     public Record(String readings, String reason) {
@@ -88,13 +92,13 @@ public class Record  implements Serializable {
         this.prevRecord=prevRecord;
     }
 
-    public Record(String name, int age, double height, double weight, String sex, String id) {
+    public Record(String name, int age, double height, double weight, String sex) {
         this.name = name;
         this.age = age;
         this.height = height;
         this.weight = weight;
         this.sex = sex;
-        this.id = id;
+
     }
 
     @Override
@@ -107,7 +111,8 @@ public class Record  implements Serializable {
         String i=(id!=null)?("id='" + id + '\'') :"";
         String read=(readings!=null)?("readings='" + readings + '\'') :"";
         String reas=(reason!=null)?("reason='" + reason + '\'') :"";
-        String t=(tests!=null)?("test='" + tests + '\'') :"";
+        String tN=(testName!=null)?("test='" + testName + '\'') :"";
+        String tR=(testResult!=null)?("test='" + testResult + '\'') :"";
         String p=(prevRecord!=null)?("previous records='" + prevRecord + '\'') :"";
         return "Record{" +
                 n+
@@ -118,7 +123,8 @@ public class Record  implements Serializable {
                 i+
                 read +
                 reas +
-                t+
+                tN+
+                tR+
                 p+
                 '}';
     }

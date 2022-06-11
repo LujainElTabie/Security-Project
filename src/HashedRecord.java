@@ -1,12 +1,11 @@
 import javax.crypto.SealedObject;
 import javax.crypto.spec.IvParameterSpec;
 import java.io.Serializable;
-import java.util.Arrays;
 
 public class HashedRecord implements Serializable {
-    private int hash;
+    private byte[] hash;
 
-    private byte[] record;
+    private SealedObject record;
 
 
 //    public IvParameterSpec getIvParameterSpec() {
@@ -15,7 +14,7 @@ public class HashedRecord implements Serializable {
 //
 //    private IvParameterSpec ivParameterSpec;
 
-    public HashedRecord(int hash, byte[] record, IvParameterSpec ivParameterSpec) {
+    public HashedRecord(byte[] hash, SealedObject record, IvParameterSpec ivParameterSpec) {
         this.hash = hash;
         this.record = record;
 //        this.encrypted = encrypted;
@@ -31,11 +30,11 @@ public class HashedRecord implements Serializable {
                 '}'+'\n';
     }
 
-    public int getHash() {
+    public byte[] getHash() {
         return hash;
     }
 
-    public byte[] getRecord() {
+    public SealedObject getRecord() {
         return record;
     }
 

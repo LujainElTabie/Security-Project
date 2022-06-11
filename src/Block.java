@@ -1,66 +1,83 @@
 import javax.crypto.*;
 import javax.crypto.spec.IvParameterSpec;
-import java.io.IOException;
-import java.io.Serializable;
+import java.io.*;
 import java.security.InvalidAlgorithmParameterException;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
+import java.security.PublicKey;
 import java.util.ArrayList;
 import java.util.Arrays;
 
 public class Block implements Serializable {
-
-
-
+    private final SealedObject[] records;
     private int blockHash;
     private int prevBlockHash;
-
-    private HashedRecord [] records;
-
     private SealedObject encryptedRecords;
 
 
-
-
-
-
-    public Block( int prevBlockHash){
+    public Block(int prevBlockHash) {
         super();
-        this.records =new HashedRecord[3];
-        this.prevBlockHash=prevBlockHash;
-        this.blockHash = Arrays.hashCode(new int []{ Arrays.hashCode(records), this.prevBlockHash});
+        this.records = new SealedObject[3];
+        this.prevBlockHash = prevBlockHash;
+        this.blockHash = Arrays.hashCode(new int[]{Arrays.hashCode(records), this.prevBlockHash});
     }
 
-    public boolean addRecord(SecretKey key, IvParameterSpec ivParameterSpec, HashedRecord record) throws InvalidAlgorithmParameterException, NoSuchPaddingException, IllegalBlockSizeException, NoSuchAlgorithmException, IOException, InvalidKeyException {
-        if(record.getHash()==record.getRecord().hashCode()){
-            if(this.records[0]==null){
-                records[0]=record;
-                return true;
+    public int addRecord(PublicKey publicKey, SecretKey key, IvParameterSpec ivParameterSpec, HashedRecord record) throws InvalidAlgorithmParameterException, NoSuchPaddingException, IllegalBlockSizeException, NoSuchAlgorithmException, IOException, InvalidKeyException {
+        int o = 0;
+        try {
+            Cipher decryptCipher = Cipher.getInstance("RSA");
+            decryptCipher.init(Cipher.DECRYPT_MODE, publicKey);
+            byte[] decryptedBlockBytes = decryptCipher.doFinal(record.getHash());
+            ByteArrayInputStream bis = new ByteArrayInputStream(decryptedBlockBytes);
+            ObjectInput in = null;
+            try {
+                in = new ObjectInputStream(bis);
+                o = (int) in.readObject();
+            } catch (ClassNotFoundException e) {
+                System.out.println("Sorry you cannot access this");
+                throw new RuntimeException(e);
+            } finally {
+                try {
+                    if (in != null) {
+                        in.close();
+                    }
+                } catch (IOException ex) {
+                    System.out.println("Sorry you cannot access this");
+                }
             }
-            else if(this.records[1]==null){
-                records[1]=record;
-                return true;
-            }
-            else if(this.records[2]==null){
-                records[2]=record;
-                return true;
-            }
-            HashedRecord [] rec= this.records;
-            String algorithm = "AES/CBC/PKCS5Padding";
-            SealedObject sealedObject = Doctor.encryptObject(
-                    algorithm, rec, key, ivParameterSpec);
-            this.encryptedRecords=sealedObject;
-
+        } catch (BadPaddingException e) {
+            System.out.println("Sorry you cannot access this");
         }
-        return false;
+        SealedObject r = record.getRecord();
+        int hash = r.hashCode();
+        if (o == hash) {
+            SealedObject[] rec = this.records;
+            String algorithm = "AES/CBC/PKCS5Padding";
+            SealedObject sealedObject = Encryption.encryptObject(
+                    algorithm, rec, key, ivParameterSpec);
+            this.encryptedRecords = sealedObject;
+            if (this.records[0] == null) {
+                records[0] = record.getRecord();
+                return 1;
+            } else if (this.records[1] == null) {
+                records[1] = record.getRecord();
+                return 1;
+            } else if (this.records[2] == null) {
+                records[2] = record.getRecord();
+                return 1;
+            }
+        } else {
+            return 2;
+        }
+        return 0;
     }
 
 
-    public HashedRecord [] readRecord(SecretKey key, IvParameterSpec ivParameterSpec) throws InvalidAlgorithmParameterException, NoSuchPaddingException, IllegalBlockSizeException, NoSuchAlgorithmException, IOException, InvalidKeyException, BadPaddingException, ClassNotFoundException {
+    public SealedObject[] readRecord(SecretKey key, IvParameterSpec ivParameterSpec) throws InvalidAlgorithmParameterException, NoSuchPaddingException, IllegalBlockSizeException, NoSuchAlgorithmException, IOException, InvalidKeyException, BadPaddingException, ClassNotFoundException {
 
-        HashedRecord [] rec= this.records;
+        SealedObject[] rec = this.records;
         String algorithm = "AES/CBC/PKCS5Padding";
-        HashedRecord [] object = (HashedRecord []) Doctor.decryptObject(
+        SealedObject[] object = (SealedObject[]) Encryption.decryptObject(
                 algorithm, this.encryptedRecords, key, ivParameterSpec);
 
         return object;
